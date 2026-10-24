@@ -9,15 +9,26 @@ body{margin:0;font-family:Arial,sans-serif;background:#f3f7f4;color:#20382b}
 header{background:#245c42;color:#fff;padding:30px 20px;text-align:center}
 h1{margin:0 0 10px}main{max-width:720px;margin:24px auto;padding:0 16px}
 section{background:#fff;padding:22px;border-radius:14px;margin-bottom:16px;box-shadow:0 2px 8px #00000012}
-input[type=text],input[type=url]{box-sizing:border-box;width:100%;padding:12px;margin:5px 0 12px;border:1px solid #ccc;border-radius:8px;font-size:16px}
+input[type=text],input[type=url],input[type=date],input[type=number],select{box-sizing:border-box;width:100%;padding:12px;margin:5px 0 12px;border:1px solid #ccc;border-radius:8px;font-size:16px}
 button{background:#245c42;color:#fff;border:0;border-radius:8px;padding:11px 16px;font-size:15px;cursor:pointer;margin:4px 4px 4px 0}
-button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:12px 0}.site-info{min-width:0;overflow-wrap:anywhere}.site-info a{color:#176348}.muted{color:#64736a;font-size:13px}
+button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:12px 0}.site-info{min-width:0;overflow-wrap:anywhere}.site-info a{color:#176348}.muted{color:#64736a;font-size:13px}.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.field label{display:block;font-weight:bold}.field input,.field select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:16px;margin:6px 0}.ok{color:#176348}
 </style>
 </head>
 <body>
 <header><h1>⛰️ YamaNavi AI 2.0</h1><p>最高の景色を、最高の思い出に。</p></header>
 <main>
-<section><h2>山を探す</h2><p>天気や希望条件から、おすすめの山を探す機能を作成していきます。</p><button onclick="alert('検索機能は今後追加します')">山を探す</button></section>
+<section><h2>山を探す</h2>
+<p>まず検索条件を設定します。山の候補表示・天気取得は次の段階で追加します。</p>
+<div class="formgrid">
+<div class="field"><label for="startCity">出発地</label><input id="startCity" type="text" value="茨城県日立市"></div>
+<div class="field"><label for="hikeDate">登山日</label><input id="hikeDate" type="date"></div>
+<div class="field"><label for="duration">山行日数</label><select id="duration"><option value="day">日帰り</option><option value="one">1泊2日</option><option value="multi">2泊以上</option></select></div>
+<div class="field"><label for="area">希望山域</label><select id="area"><option value="all">全国</option><option value="north">北アルプス</option><option value="south">南アルプス</option><option value="central">中央アルプス</option><option value="yatsu">八ヶ岳</option><option value="tohoku">東北</option><option value="kanto">関東・上信越</option><option value="hokkaido">北海道</option><option value="west">近畿・中国・四国・九州</option></select></div>
+<div class="field"><label for="maxHours">1日の希望歩行時間（時間）</label><input id="maxHours" type="number" min="1" max="20" step="0.5" value="10"></div>
+<div class="field"><label for="transport">移動手段</label><select id="transport"><option value="car">マイカー</option><option value="public">公共交通機関</option></select></div>
+</div>
+<button id="saveConditions">検索条件を保存</button><p id="conditionsMessage" class="muted" role="status" aria-live="polite"></p>
+<p class="muted">※ 現時点では条件の入力・保存のみ対応しています。検索結果はまだ表示しません。</p></section>
 <section><h2>登山計画</h2><p>登山口・駐車場・コース情報を確認できるようにします。</p></section>
 <section><h2>自分の登山履歴</h2><p>GPXファイルの取り込みに対応する予定です。</p></section>
 <section>
@@ -29,7 +40,7 @@ button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items
 <label for="siteName">サイト名</label><input id="siteName" type="text" placeholder="例：山小屋情報">
 <label for="siteUrl">URL</label><input id="siteUrl" type="url" placeholder="https://example.com">
 <button id="addSite">＋ 参考サイトを追加</button>
-<h3>参考サイトのバックアップ・復元</h3>
+<h3>データのバックアップ・復元</h3><p class="muted">新しいバックアップには参考サイトと検索条件を含みます。以前の参考サイト専用JSONも読み込めます。</p>
 <button id="backup">JSONをバックアップ</button>
 <p><label for="restoreFile">復元するJSONファイルを選択</label></p>
 <input id="restoreFile" type="file" accept=".json,application/json">
@@ -42,6 +53,15 @@ button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items
 (function(){
 'use strict';
 const KEY='yamanavi2_reference_sites';
+const CONDITIONS_KEY='yamanavi2_search_conditions';
+const fieldIds=['startCity','hikeDate','duration','area','maxHours','transport'];
+const conditionDefaults={startCity:'茨城県日立市',hikeDate:'',duration:'day',area:'all',maxHours:'10',transport:'car'};
+const conditionsMessage=document.getElementById('conditionsMessage');
+function readConditions(){const data={};fieldIds.forEach(id=>data[id]=document.getElementById(id).value);return data}
+function validConditions(c){return c&&typeof c==='object'&&fieldIds.every(id=>typeof c[id]==='string'&&c[id].length<=150)&&Number(c.maxHours)>=1&&Number(c.maxHours)<=20&&['day','one','multi'].includes(c.duration)&&['all','north','south','central','yatsu','tohoku','kanto','hokkaido','west'].includes(c.area)&&['car','public'].includes(c.transport)&&(!c.hikeDate||/^\d{4}-\d{2}-\d{2}$/.test(c.hikeDate))}
+function showConditions(c){fieldIds.forEach(id=>document.getElementById(id).value=c[id])}
+try{const raw=localStorage.getItem(CONDITIONS_KEY);if(raw){const c=JSON.parse(raw);if(validConditions(c))showConditions(c);else conditionsMessage.textContent='検索条件の保存データが不正なため、初期値を表示しています。'}}catch(e){conditionsMessage.textContent='検索条件を読み込めませんでした。'}
+document.getElementById('saveConditions').addEventListener('click',()=>{const c=readConditions();if(!validConditions(c)){conditionsMessage.textContent='入力内容を確認してください。';return}try{localStorage.setItem(CONDITIONS_KEY,JSON.stringify(c));conditionsMessage.textContent='検索条件を保存しました。'}catch(e){conditionsMessage.textContent='保存に失敗しました。'}});
 const defaults=[{name:'YAMAP',url:'https://yamap.com'},{name:'ヤマレコ',url:'https://www.yamareco.com'},{name:'気象庁',url:'https://www.jma.go.jp'}];
 const list=document.getElementById('siteList');
 const message=document.getElementById('message');
@@ -85,7 +105,7 @@ document.getElementById('addSite').addEventListener('click',()=>{
  document.getElementById('siteName').value='';document.getElementById('siteUrl').value='';message.textContent='参考サイトを保存しました。';render();
 });
 document.getElementById('backup').addEventListener('click',()=>{
- const data={app:'YamaNavi AI 2.0',type:'reference-sites',version:1,exportedAt:new Date().toISOString(),sites};
+ const data={app:'YamaNavi AI 2.0',type:'reference-sites',version:2,exportedAt:new Date().toISOString(),sites,conditions:(()=>{try{const c=JSON.parse(localStorage.getItem(CONDITIONS_KEY));return validConditions(c)?c:readConditions()}catch(e){return readConditions()}})()};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='yamanavi_reference_sites_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  message.textContent='バックアップファイルのダウンロードを開始しました。';
@@ -96,11 +116,12 @@ document.getElementById('restore').addEventListener('click',async()=>{
  if(file.size>1024*1024){message.textContent='ファイルが大きすぎます（上限1MB）。';return}
  let data;
  try{data=JSON.parse(await file.text())}catch(e){message.textContent='JSONファイルを読み込めませんでした。';return}
- if(!data||data.app!=='YamaNavi AI 2.0'||data.type!=='reference-sites'||data.version!==1||!validSites(data.sites)){
+ if(!data||data.app!=='YamaNavi AI 2.0'||data.type!=='reference-sites'||![1,2].includes(data.version)||!validSites(data.sites)||(data.version===2&&!validConditions(data.conditions))){
   message.textContent='このアプリの参考サイト用バックアップではありません。';return;
  }
  if(!confirm('現在の参考サイト一覧をバックアップファイルの内容で置き換えます。続けますか？'))return;
- if(save(data.sites)){render();fileInput.value='';message.textContent='復元しました。画面を更新しても残るか確認してください。'}
+ if(data.version===2){try{localStorage.setItem(CONDITIONS_KEY,JSON.stringify(data.conditions))}catch(e){message.textContent='検索条件を保存できませんでした。復元を中止しました。';return}}
+ if(save(data.sites)){if(data.version===2)showConditions(data.conditions);render();fileInput.value='';message.textContent='復元しました。画面を更新しても残るか確認してください。'}
 });
 render();
 })();
