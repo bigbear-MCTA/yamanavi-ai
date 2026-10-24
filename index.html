@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,157 +5,104 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YamaNavi AI 2.0</title>
 <style>
-  body { margin:0; font-family:Arial,sans-serif; background:#f3f7f4; color:#20382b; }
-  header { background:#245c42; color:white; padding:30px 20px; text-align:center; }
-  h1 { margin:0 0 10px; }
-  main { max-width:720px; margin:24px auto; padding:0 16px; }
-  section { background:white; padding:22px; border-radius:14px; margin-bottom:16px; box-shadow:0 2px 8px #00000012; }
-  input { box-sizing:border-box; width:100%; padding:12px; margin:5px 0 12px; border:1px solid #ccc; border-radius:8px; font-size:16px; }
-  button { background:#245c42; color:white; border:0; border-radius:8px; padding:11px 16px; font-size:15px; cursor:pointer; }
-  button.delete { background:#a63b3b; padding:7px 12px; }
-  .site { display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid #ddd; padding:12px 0; }
-  .site-info { min-width:0; overflow-wrap:anywhere; }
-  .site-info a { color:#176348; }
-  .muted { color:#64736a; font-size:13px; }
+body{margin:0;font-family:Arial,sans-serif;background:#f3f7f4;color:#20382b}
+header{background:#245c42;color:#fff;padding:30px 20px;text-align:center}
+h1{margin:0 0 10px}main{max-width:720px;margin:24px auto;padding:0 16px}
+section{background:#fff;padding:22px;border-radius:14px;margin-bottom:16px;box-shadow:0 2px 8px #00000012}
+input[type=text],input[type=url]{box-sizing:border-box;width:100%;padding:12px;margin:5px 0 12px;border:1px solid #ccc;border-radius:8px;font-size:16px}
+button{background:#245c42;color:#fff;border:0;border-radius:8px;padding:11px 16px;font-size:15px;cursor:pointer;margin:4px 4px 4px 0}
+button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:12px 0}.site-info{min-width:0;overflow-wrap:anywhere}.site-info a{color:#176348}.muted{color:#64736a;font-size:13px}
 </style>
 </head>
 <body>
-<header>
-  <h1>⛰️ YamaNavi AI 2.0</h1>
-  <p>最高の景色を、最高の思い出に。</p>
-</header>
+<header><h1>⛰️ YamaNavi AI 2.0</h1><p>最高の景色を、最高の思い出に。</p></header>
 <main>
-  <section>
-    <h2>山を探す</h2>
-    <p>天気や希望条件から、おすすめの山を探す機能を作成していきます。</p>
-    <button onclick="alert('検索機能は今後追加します')">山を探す</button>
-  </section>
-  <section>
-    <h2>登山計画</h2>
-    <p>登山口・駐車場・コース情報を確認できるようにします。</p>
-  </section>
-  <section>
-    <h2>自分の登山履歴</h2>
-    <p>GPXファイルの取り込みに対応する予定です。</p>
-  </section>
-  <section>
-    <h2>設定・バックアップ</h2>
-    <p>出発地：日立市（初期設定予定）</p>
-    <h3>参考サイトの管理</h3>
-    <p class="muted">サイト名・URLのどちらか一方だけでも登録できます。</p>
-    <div id="siteList"></div>
-    <label for="siteName">サイト名</label>
-    <input id="siteName" placeholder="例：山小屋情報">
-    <label for="siteUrl">URL</label>
-    <input id="siteUrl" placeholder="https://example.com" type="url">
-    <button id="addSite">＋ 参考サイトを追加</button>
-    <p id="message" class="muted" role="status"></p>
-    <p class="muted">登録情報は、このブラウザ内に保存されます。別の端末とは自動同期されません。</p>
-  </section>
+<section><h2>山を探す</h2><p>天気や希望条件から、おすすめの山を探す機能を作成していきます。</p><button onclick="alert('検索機能は今後追加します')">山を探す</button></section>
+<section><h2>登山計画</h2><p>登山口・駐車場・コース情報を確認できるようにします。</p></section>
+<section><h2>自分の登山履歴</h2><p>GPXファイルの取り込みに対応する予定です。</p></section>
+<section>
+<h2>設定・バックアップ</h2>
+<p>出発地：日立市（初期設定予定）</p>
+<h3>参考サイトの管理</h3>
+<p class="muted">サイト名・URLのどちらか一方だけでも登録できます。</p>
+<div id="siteList"></div>
+<label for="siteName">サイト名</label><input id="siteName" type="text" placeholder="例：山小屋情報">
+<label for="siteUrl">URL</label><input id="siteUrl" type="url" placeholder="https://example.com">
+<button id="addSite">＋ 参考サイトを追加</button>
+<h3>参考サイトのバックアップ・復元</h3>
+<button id="backup">JSONをバックアップ</button>
+<p><label for="restoreFile">復元するJSONファイルを選択</label></p>
+<input id="restoreFile" type="file" accept=".json,application/json">
+<button id="restore">選択したJSONから復元</button>
+<p id="message" class="muted" role="status" aria-live="polite"></p>
+<p class="muted">登録内容はこのブラウザに保存されます。別端末とは自動同期されません。バックアップファイルは大切に保管してください。</p>
+</section>
 </main>
 <script>
 (function(){
-  "use strict";
-  const KEY = "yamanavi2_reference_sites";
-  const defaults = [
-    {name:"YAMAP",url:"https://yamap.com"},
-    {name:"ヤマレコ",url:"https://www.yamareco.com"},
-    {name:"気象庁",url:"https://www.jma.go.jp"}
-  ];
-  const list = document.getElementById("siteList");
-  const message = document.getElementById("message");
-  let sites;
-
-  try {
-    const saved = localStorage.getItem(KEY);
-    sites = saved === null ? defaults : JSON.parse(saved);
-    if (!Array.isArray(sites)) throw new Error("Invalid data");
-  } catch(e) {
-    sites = defaults;
-    message.textContent = "保存データを読み込めませんでした。初期リストを表示しています。";
-  }
-
-  function save(){
-    try {
-      localStorage.setItem(KEY, JSON.stringify(sites));
-      return true;
-    } catch(e) {
-      message.textContent = "保存できませんでした。ブラウザの保存設定を確認してください。";
-      return false;
-    }
-  }
-
-  function render(){
-    list.replaceChildren();
-    if(sites.length === 0) {
-      const p = document.createElement("p");
-      p.className = "muted";
-      p.textContent = "登録サイトはありません。";
-      list.appendChild(p);
-    }
-    sites.forEach((site,index)=>{
-      const row = document.createElement("div");
-      row.className = "site";
-      const info = document.createElement("div");
-      info.className = "site-info";
-      const strong = document.createElement("strong");
-      strong.textContent = site.name || site.url;
-      info.appendChild(strong);
-      if(site.url){
-        const p = document.createElement("div");
-        const a = document.createElement("a");
-        a.href = site.url;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.textContent = site.url;
-        p.appendChild(a);
-        info.appendChild(p);
-      }
-      const del = document.createElement("button");
-      del.className = "delete";
-      del.textContent = "削除";
-      del.addEventListener("click",()=>{
-        if(!confirm("このサイトを削除しますか？")) return;
-        const previous = sites;
-        sites = sites.filter((_,i)=>i!==index);
-        if(!save()) sites = previous;
-        render();
-      });
-      row.append(info,del);
-      list.appendChild(row);
-    });
-  }
-
-  document.getElementById("addSite").addEventListener("click",()=>{
-    const name = document.getElementById("siteName").value.trim();
-    const rawUrl = document.getElementById("siteUrl").value.trim();
-    if(!name && !rawUrl){
-      message.textContent = "サイト名またはURLを入力してください。";
-      return;
-    }
-    let url = rawUrl;
-    if(url){
-      try {
-        const parsed = new URL(url);
-        if(!["https:","http:"].includes(parsed.protocol)) throw new Error();
-        url = parsed.href;
-      } catch(e) {
-        message.textContent = "URLは https:// から始まる正しい形式で入力してください。";
-        return;
-      }
-    }
-    const previous = sites;
-    sites = [...sites,{name:name || url,url}];
-    if(!save()){
-      sites = previous;
-      return;
-    }
-    document.getElementById("siteName").value = "";
-    document.getElementById("siteUrl").value = "";
-    message.textContent = "参考サイトを保存しました。";
-    render();
-  });
-  render();
+'use strict';
+const KEY='yamanavi2_reference_sites';
+const defaults=[{name:'YAMAP',url:'https://yamap.com'},{name:'ヤマレコ',url:'https://www.yamareco.com'},{name:'気象庁',url:'https://www.jma.go.jp'}];
+const list=document.getElementById('siteList');
+const message=document.getElementById('message');
+const fileInput=document.getElementById('restoreFile');
+let sites;
+function validSites(value){
+ return Array.isArray(value)&&value.length<=1000&&value.every(s=>s&&typeof s==='object'&&typeof s.name==='string'&&typeof s.url==='string'&&s.name.length<=500&&s.url.length<=2048&&(!s.url||(/^https?:\/\//i.test(s.url)&&(()=>{try{return ['http:','https:'].includes(new URL(s.url).protocol)}catch(e){return false}})())));
+}
+try{
+ const raw=localStorage.getItem(KEY);
+ const loaded=raw===null?defaults:JSON.parse(raw);
+ if(!validSites(loaded))throw new Error('invalid');
+ sites=loaded;
+}catch(e){sites=defaults;message.textContent='保存データを読み込めませんでした。初期リストを表示しています。';}
+function save(next){
+ try{localStorage.setItem(KEY,JSON.stringify(next));sites=next;return true}
+ catch(e){message.textContent='保存できませんでした。ブラウザの保存設定を確認してください。';return false}
+}
+function render(){
+ list.replaceChildren();
+ if(!sites.length){const p=document.createElement('p');p.className='muted';p.textContent='登録サイトはありません。';list.appendChild(p)}
+ sites.forEach((site,index)=>{
+  const row=document.createElement('div');row.className='site';
+  const info=document.createElement('div');info.className='site-info';
+  const strong=document.createElement('strong');strong.textContent=site.name||site.url;info.appendChild(strong);
+  if(site.url){const p=document.createElement('div');const a=document.createElement('a');a.href=site.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=site.url;p.appendChild(a);info.appendChild(p)}
+  const del=document.createElement('button');del.className='delete';del.textContent='削除';
+  del.addEventListener('click',()=>{if(!confirm('このサイトを削除しますか？'))return;if(save(sites.filter((_,i)=>i!==index))){message.textContent='サイトを削除しました。';render()}});
+  row.append(info,del);list.appendChild(row);
+ });
+}
+document.getElementById('addSite').addEventListener('click',()=>{
+ const name=document.getElementById('siteName').value.trim();
+ const rawUrl=document.getElementById('siteUrl').value.trim();
+ if(!name&&!rawUrl){message.textContent='サイト名またはURLを入力してください。';return}
+ let url=rawUrl;
+ if(url){try{const parsed=new URL(url);if(!['https:','http:'].includes(parsed.protocol))throw new Error();url=parsed.href}catch(e){message.textContent='URLは https:// から始まる正しい形式で入力してください。';return}}
+ const next=[...sites,{name:name||url,url}];
+ if(!validSites(next)){message.textContent='登録件数または入力文字数の上限を超えています。';return}
+ if(!save(next))return;
+ document.getElementById('siteName').value='';document.getElementById('siteUrl').value='';message.textContent='参考サイトを保存しました。';render();
+});
+document.getElementById('backup').addEventListener('click',()=>{
+ const data={app:'YamaNavi AI 2.0',type:'reference-sites',version:1,exportedAt:new Date().toISOString(),sites};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='yamanavi_reference_sites_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ message.textContent='バックアップファイルのダウンロードを開始しました。';
+});
+document.getElementById('restore').addEventListener('click',async()=>{
+ const file=fileInput.files&&fileInput.files[0];
+ if(!file){message.textContent='復元するJSONファイルを選択してください。';return}
+ if(file.size>1024*1024){message.textContent='ファイルが大きすぎます（上限1MB）。';return}
+ let data;
+ try{data=JSON.parse(await file.text())}catch(e){message.textContent='JSONファイルを読み込めませんでした。';return}
+ if(!data||data.app!=='YamaNavi AI 2.0'||data.type!=='reference-sites'||data.version!==1||!validSites(data.sites)){
+  message.textContent='このアプリの参考サイト用バックアップではありません。';return;
+ }
+ if(!confirm('現在の参考サイト一覧をバックアップファイルの内容で置き換えます。続けますか？'))return;
+ if(save(data.sites)){render();fileInput.value='';message.textContent='復元しました。画面を更新しても残るか確認してください。'}
+});
+render();
 })();
 </script>
 </body>
