@@ -31,7 +31,7 @@ button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items
 <button id="searchMountains" type="button">山の候補を表示</button>
 <p class="muted">検索条件を変更した場合は「検索条件を保存」も押してください。</p>
 <div id="mountainResults" aria-live="polite"></div>
-<p class="warning">【重要】候補はアプリ内に登録した山のサンプルです。全国の山を網羅していません。歩行時間・難易度・登山道状況・駐車場・山小屋営業・天気・交通アクセスを自動検証する機能はまだありません。赤岳・硫黄岳には試験的なルート情報を掲載していますが、コースタイムなどの数値は未検証です。山行の判断には必ず公式情報・最新の登山情報を確認してください。</p></section>
+<p class="warning">【重要】候補はアプリ内に登録した山のサンプルです。全国の山を網羅していません。歩行時間・難易度・登山道状況・駐車場・山小屋営業・天気・交通アクセスを自動検証する機能はまだありません。赤岳・美濃戸発の歩行時間・距離・累積標高は参考値で、原典・測定条件の再照合は未完了です。他ルートの数値は未確認です。山行の判断には必ず公式情報・最新の登山情報を確認してください。</p></section>
 <section><h2>登山計画</h2><p>登山口・駐車場・コース情報を確認できるようにします。</p></section>
 <section><h2>自分の登山履歴</h2><p>GPXファイルの取り込みに対応する予定です。</p></section>
 <section>
@@ -86,11 +86,11 @@ document.getElementById('saveConditions').addEventListener('click',()=>{const c=
   {name:'宮之浦岳',area:'west',height:1936,days:['day','one','multi'],note:'屋久島の天候と交通手段に注意'}
  ];
   // ルート詳細の試作。ルート名は参考情報。数値・駐車場の営業状況は未確認。
-  // 数値を確認できた場合のみ hours, distanceKm, ascentM に登録する。
+  // 美濃戸発の数値は暫定参考値。原典の再照合までは絞り込みに使わない。
   const routes={
    '赤岳':[
     {name:'美濃戸口発：南沢～行者小屋～文三郎尾根～赤岳（往復）',trailhead:'美濃戸口（八ヶ岳山荘付近）',parking:'美濃戸口周辺（利用条件未確認）',hours:null,distanceKm:null,ascentM:null,via:'美濃戸・南沢・行者小屋・文三郎尾根',source:'同一往復経路の数値・出典は確認待ち',note:'美濃戸発より歩行区間が長い。岩場・鎖場、道路・冬季条件を要確認'},
-    {name:'美濃戸発：南沢～行者小屋～文三郎尾根～赤岳（往復）',trailhead:'美濃戸（赤岳山荘付近）',parking:'美濃戸周辺（車両通行条件・利用条件未確認）',hours:null,distanceKm:null,ascentM:null,via:'南沢・行者小屋・文三郎尾根',source:'参考値はあるが経路・計測条件と出典の照合待ち',note:'美濃戸口から先の道路は車両・季節による制約を要確認。岩場・鎖場あり'},
+    {name:'美濃戸発：南沢～行者小屋～文三郎尾根～赤岳（往復）',trailhead:'美濃戸（赤岳山荘付近）',parking:'美濃戸周辺（車両通行条件・利用条件未確認）',hours:7.3,distanceKm:10.9,ascentM:1230,via:'南沢・行者小屋・文三郎尾根',source:'参考値：前回調査で提示したヤマルート掲載値（原典URL・測定条件は再照合待ち）',note:'美濃戸口から先の道路は車両・季節による制約を要確認。岩場・鎖場あり'},
     {name:'県界尾根から赤岳（往復）',trailhead:'清里側・県界尾根方面（詳細未確認）',parking:'未確認',hours:null,distanceKm:null,ascentM:null,via:'県界尾根',note:'急峻な岩場を含む。経験と装備に応じた検討が必要'}
    ],
    '硫黄岳':[
@@ -98,7 +98,7 @@ document.getElementById('saveConditions').addEventListener('click',()=>{const c=
     {name:'美濃戸口～赤岳鉱泉～硫黄岳（往復）',trailhead:'美濃戸口',parking:'美濃戸口周辺（利用条件未確認）',hours:null,distanceKm:null,ascentM:null,via:'北沢・赤岳鉱泉',note:'季節による路面・登山道状況を要確認'}
    ]
   };
-  function routeValue(v,unit){return Number.isFinite(v)?String(v)+unit:'未確認'}
+  function routeValue(v,unit){if(!Number.isFinite(v))return '未確認';if(unit==='時間'){const mins=Math.round(v*60);return Math.floor(mins/60)+'時間'+String(mins%60).padStart(2,'0')+'分（参考値）'}return String(v)+unit+'（参考値）'}
   function renderRoutes(card,m){
    const data=routes[m.name];if(!data)return;
    const details=document.createElement('details');details.className='route-details';
@@ -111,10 +111,11 @@ document.getElementById('saveConditions').addEventListener('click',()=>{const c=
      const dt=document.createElement('dt');dt.textContent=label;
      const dd=document.createElement('dd');dd.textContent=value;dl.append(dt,dd);
     });box.appendChild(dl);
+    if(r.source){const source=document.createElement('p');source.className='muted';source.textContent='データ出典：'+r.source;box.appendChild(source)}
     const caution=document.createElement('p');caution.className='route-note';caution.textContent='注意：'+r.note;box.appendChild(caution);
     details.appendChild(box);
    });
-   const notice=document.createElement('p');notice.className='muted';notice.textContent='※ ルートは試験登録です。所要時間・距離・累積標高は同一経路の出典照合が済むまで未確認とし、歩行時間による絞り込みには使用していません。';details.appendChild(notice);
+   const notice=document.createElement('p');notice.className='muted';notice.textContent='※ 美濃戸発の数値は参考値であり、原典・測定条件の再照合は未完了です。他ルートは未確認です。歩行時間による絞り込みには使用していません。';details.appendChild(notice);
    card.appendChild(details);
   }
  const areaNames={north:'北アルプス',south:'南アルプス',central:'中央アルプス',yatsu:'八ヶ岳',tohoku:'東北',kanto:'関東・上信越',hokkaido:'北海道',west:'近畿・中国・四国・九州'};
