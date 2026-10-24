@@ -11,14 +11,14 @@ h1{margin:0 0 10px}main{max-width:720px;margin:24px auto;padding:0 16px}
 section{background:#fff;padding:22px;border-radius:14px;margin-bottom:16px;box-shadow:0 2px 8px #00000012}
 input[type=text],input[type=url],input[type=date],input[type=number],select{box-sizing:border-box;width:100%;padding:12px;margin:5px 0 12px;border:1px solid #ccc;border-radius:8px;font-size:16px}
 button{background:#245c42;color:#fff;border:0;border-radius:8px;padding:11px 16px;font-size:15px;cursor:pointer;margin:4px 4px 4px 0}
-button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:12px 0}.site-info{min-width:0;overflow-wrap:anywhere}.site-info a{color:#176348}.muted{color:#64736a;font-size:13px}.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.field label{display:block;font-weight:bold}.field input,.field select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:16px;margin:6px 0}.ok{color:#176348}
+button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:12px 0}.site-info{min-width:0;overflow-wrap:anywhere}.site-info a{color:#176348}.muted{color:#64736a;font-size:13px}.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.field label{display:block;font-weight:bold}.field input,.field select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:16px;margin:6px 0}.ok{color:#176348}.mountain-card{border:1px solid #dbe5de;border-radius:10px;padding:14px;margin:10px 0;background:#f9fcfa}.mountain-card h3{margin:0 0 6px}.tag{display:inline-block;background:#e6f2e9;padding:3px 8px;border-radius:10px;margin:3px 5px 3px 0;font-size:12px}.warning{background:#fff6e5;border-left:4px solid #bd8425;padding:12px;border-radius:6px}
 </style>
 </head>
 <body>
 <header><h1>⛰️ YamaNavi AI 2.0</h1><p>最高の景色を、最高の思い出に。</p></header>
 <main>
 <section><h2>山を探す</h2>
-<p>まず検索条件を設定します。山の候補表示・天気取得は次の段階で追加します。</p>
+<p>検索条件を指定して、登録済みの山の候補を絞り込めます。</p>
 <div class="formgrid">
 <div class="field"><label for="startCity">出発地</label><input id="startCity" type="text" value="茨城県日立市"></div>
 <div class="field"><label for="hikeDate">登山日</label><input id="hikeDate" type="date"></div>
@@ -28,7 +28,10 @@ button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items
 <div class="field"><label for="transport">移動手段</label><select id="transport"><option value="car">マイカー</option><option value="public">公共交通機関</option></select></div>
 </div>
 <button id="saveConditions">検索条件を保存</button><p id="conditionsMessage" class="muted" role="status" aria-live="polite"></p>
-<p class="muted">※ 現時点では条件の入力・保存のみ対応しています。検索結果はまだ表示しません。</p></section>
+<button id="searchMountains" type="button">山の候補を表示</button>
+<p class="muted">検索条件を変更した場合は「検索条件を保存」も押してください。</p>
+<div id="mountainResults" aria-live="polite"></div>
+<p class="warning">【重要】候補はアプリ内に登録した山のサンプルです。全国の山を網羅していません。歩行時間・難易度・登山道状況・駐車場・山小屋営業・天気・交通アクセスを自動検証する機能はまだありません。山行の判断には必ず公式情報・最新の登山情報を確認してください。</p></section>
 <section><h2>登山計画</h2><p>登山口・駐車場・コース情報を確認できるようにします。</p></section>
 <section><h2>自分の登山履歴</h2><p>GPXファイルの取り込みに対応する予定です。</p></section>
 <section>
@@ -62,6 +65,45 @@ function validConditions(c){return c&&typeof c==='object'&&fieldIds.every(id=>ty
 function showConditions(c){fieldIds.forEach(id=>document.getElementById(id).value=c[id])}
 try{const raw=localStorage.getItem(CONDITIONS_KEY);if(raw){const c=JSON.parse(raw);if(validConditions(c))showConditions(c);else conditionsMessage.textContent='検索条件の保存データが不正なため、初期値を表示しています。'}}catch(e){conditionsMessage.textContent='検索条件を読み込めませんでした。'}
 document.getElementById('saveConditions').addEventListener('click',()=>{const c=readConditions();if(!validConditions(c)){conditionsMessage.textContent='入力内容を確認してください。';return}try{localStorage.setItem(CONDITIONS_KEY,JSON.stringify(c));conditionsMessage.textContent='検索条件を保存しました。'}catch(e){conditionsMessage.textContent='保存に失敗しました。'}});
+
+ // 登山候補の試験版カタログ。時間・技術難度は未登録とし、安全性の判定には用いない。
+ const mountains=[
+  {name:'蝶ヶ岳',area:'north',height:2677,days:['day','one'],note:'三股など複数の登山ルートあり'},
+  {name:'燕岳',area:'north',height:2763,days:['day','one'],note:'中房温泉方面からの登山ルートあり'},
+  {name:'常念岳',area:'north',height:2857,days:['day','one'],note:'一ノ沢・三股方面などの登山ルートあり'},
+  {name:'唐松岳',area:'north',height:2696,days:['day','one'],note:'八方尾根方面の登山ルートあり'},
+  {name:'槍ヶ岳',area:'north',height:3180,days:['one','multi'],note:'山頂付近は岩場・鎖場あり'},
+  {name:'北岳',area:'south',height:3193,days:['one','multi'],note:'入山口への交通規制等を事前確認'},
+  {name:'木曽駒ヶ岳',area:'central',height:2956,days:['day','one'],note:'ロープウェイ運行・アクセス要確認'},
+  {name:'赤岳',area:'yatsu',height:2899,days:['day','one'],note:'ルートによって岩場・鎖場あり'},
+  {name:'硫黄岳',area:'yatsu',height:2760,days:['day','one'],note:'八ヶ岳の火山性の稜線'},
+  {name:'鳥海山',area:'tohoku',height:2236,days:['day','one'],note:'登山口・季節で必要装備が大きく変わる'},
+  {name:'安達太良山',area:'tohoku',height:1700,days:['day','one'],note:'火山情報・気象条件を確認'},
+  {name:'谷川岳',area:'kanto',height:1977,days:['day','one'],note:'登山ルートにより難易度が大きく異なる'},
+  {name:'日光白根山',area:'kanto',height:2578,days:['day','one'],note:'火山情報・登山口の営業状況を確認'},
+  {name:'旭岳',area:'hokkaido',height:2291,days:['day','one'],note:'高山の強風・降雪に注意'},
+  {name:'石鎚山',area:'west',height:1982,days:['day','one'],note:'鎖場を通らない迂回路もある'},
+  {name:'宮之浦岳',area:'west',height:1936,days:['day','one','multi'],note:'屋久島の天候と交通手段に注意'}
+ ];
+ const areaNames={north:'北アルプス',south:'南アルプス',central:'中央アルプス',yatsu:'八ヶ岳',tohoku:'東北',kanto:'関東・上信越',hokkaido:'北海道',west:'近畿・中国・四国・九州'};
+ const results=document.getElementById('mountainResults');
+ document.getElementById('searchMountains').addEventListener('click',()=>{
+  const c=readConditions();
+  if(!validConditions(c)){conditionsMessage.textContent='検索条件の入力内容を確認してください。';return}
+  results.replaceChildren();
+  const matching=mountains.filter(m=>(c.area==='all'||m.area===c.area)&&m.days.includes(c.duration));
+  const intro=document.createElement('p');intro.textContent='登録済みの山 '+mountains.length+'件から '+matching.length+'件を表示しています。';results.appendChild(intro);
+  const note=document.createElement('p');note.className='muted';note.textContent='歩行時間・出発地・登山日・交通手段は、現在は絞り込みに使用していません（ルート別の検証済みデータが未登録のため）。';results.appendChild(note);
+  if(!matching.length){const empty=document.createElement('p');empty.textContent='この条件に該当する登録済みの山はありません。';results.appendChild(empty)}
+  matching.forEach(m=>{
+   const card=document.createElement('article');card.className='mountain-card';
+   const title=document.createElement('h3');title.textContent=m.name;card.appendChild(title);
+   const meta=document.createElement('p');meta.className='muted';meta.textContent=areaNames[m.area]+' ／ 標高 約'+m.height.toLocaleString('ja-JP')+'m';card.appendChild(meta);
+   const desc=document.createElement('p');desc.textContent=m.note;card.appendChild(desc);
+   const label=document.createElement('span');label.className='tag';label.textContent='コース時間・最新状況：未確認';card.appendChild(label);
+   results.appendChild(card);
+  });
+ });
 const defaults=[{name:'YAMAP',url:'https://yamap.com'},{name:'ヤマレコ',url:'https://www.yamareco.com'},{name:'気象庁',url:'https://www.jma.go.jp'}];
 const list=document.getElementById('siteList');
 const message=document.getElementById('message');
