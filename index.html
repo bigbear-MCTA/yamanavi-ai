@@ -89,7 +89,8 @@ document.getElementById('saveConditions').addEventListener('click',()=>{const c=
   // 数値を確認できた場合のみ hours, distanceKm, ascentM に登録する。
   const routes={
    '赤岳':[
-    {name:'美濃戸口～南沢～行者小屋～文三郎尾根～赤岳（往復）',trailhead:'美濃戸口',parking:'美濃戸口周辺（利用条件未確認）',hours:null,distanceKm:null,ascentM:null,via:'南沢・行者小屋・文三郎尾根',note:'岩場・鎖場がある。登山道・駐車場・冬季条件を要確認'},
+    {name:'美濃戸口発：南沢～行者小屋～文三郎尾根～赤岳（往復）',trailhead:'美濃戸口（八ヶ岳山荘付近）',parking:'美濃戸口周辺（利用条件未確認）',hours:null,distanceKm:null,ascentM:null,via:'美濃戸・南沢・行者小屋・文三郎尾根',source:'同一往復経路の数値・出典は確認待ち',note:'美濃戸発より歩行区間が長い。岩場・鎖場、道路・冬季条件を要確認'},
+    {name:'美濃戸発：南沢～行者小屋～文三郎尾根～赤岳（往復）',trailhead:'美濃戸（赤岳山荘付近）',parking:'美濃戸周辺（車両通行条件・利用条件未確認）',hours:null,distanceKm:null,ascentM:null,via:'南沢・行者小屋・文三郎尾根',source:'参考値はあるが経路・計測条件と出典の照合待ち',note:'美濃戸口から先の道路は車両・季節による制約を要確認。岩場・鎖場あり'},
     {name:'県界尾根から赤岳（往復）',trailhead:'清里側・県界尾根方面（詳細未確認）',parking:'未確認',hours:null,distanceKm:null,ascentM:null,via:'県界尾根',note:'急峻な岩場を含む。経験と装備に応じた検討が必要'}
    ],
    '硫黄岳':[
@@ -106,14 +107,14 @@ document.getElementById('saveConditions').addEventListener('click',()=>{const c=
     const box=document.createElement('div');box.className='route-item';
     const heading=document.createElement('h4');heading.textContent=r.name;box.appendChild(heading);
     const dl=document.createElement('dl');
-    [['登山口',r.trailhead],['駐車場',r.parking],['経由地',r.via],['歩行時間',routeValue(r.hours,'時間')],['距離',routeValue(r.distanceKm,'km')],['累積登り',routeValue(r.ascentM,'m')]].forEach(([label,value])=>{
+    [['登山口',r.trailhead],['駐車場',r.parking],['経由地',r.via],['歩行時間',routeValue(r.hours,'時間')],['距離',routeValue(r.distanceKm,'km')],['累積標高',routeValue(r.ascentM,'m')]].forEach(([label,value])=>{
      const dt=document.createElement('dt');dt.textContent=label;
      const dd=document.createElement('dd');dd.textContent=value;dl.append(dt,dd);
     });box.appendChild(dl);
     const caution=document.createElement('p');caution.className='route-note';caution.textContent='注意：'+r.note;box.appendChild(caution);
     details.appendChild(box);
    });
-   const notice=document.createElement('p');notice.className='muted';notice.textContent='※ ルートは試験登録です。所要時間・距離・累積標高は検証前のため、歩行時間による絞り込みには使用していません。';details.appendChild(notice);
+   const notice=document.createElement('p');notice.className='muted';notice.textContent='※ ルートは試験登録です。所要時間・距離・累積標高は同一経路の出典照合が済むまで未確認とし、歩行時間による絞り込みには使用していません。';details.appendChild(notice);
    card.appendChild(details);
   }
  const areaNames={north:'北アルプス',south:'南アルプス',central:'中央アルプス',yatsu:'八ヶ岳',tohoku:'東北',kanto:'関東・上信越',hokkaido:'北海道',west:'近畿・中国・四国・九州'};
