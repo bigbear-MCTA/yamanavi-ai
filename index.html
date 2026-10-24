@@ -1,41 +1,163 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YamaNavi AI 2.0</title>
-  <style>
-    body { margin: 0; font-family: sans-serif; background: #f3f7f4; color: #20382b; }
-    header { background: #245c42; color: white; padding: 32px 20px; text-align: center; }
-    h1 { margin: 0 0 10px; }
-    main { max-width: 700px; margin: 24px auto; padding: 0 16px; }
-    section { background: white; padding: 22px; border-radius: 14px; margin-bottom: 16px; box-shadow: 0 2px 8px #00000012; }
-    button { background: #245c42; color: white; border: 0; border-radius: 8px; padding: 12px 18px; font-size: 16px; cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YamaNavi AI 2.0</title>
+<style>
+  body { margin:0; font-family:Arial,sans-serif; background:#f3f7f4; color:#20382b; }
+  header { background:#245c42; color:white; padding:30px 20px; text-align:center; }
+  h1 { margin:0 0 10px; }
+  main { max-width:720px; margin:24px auto; padding:0 16px; }
+  section { background:white; padding:22px; border-radius:14px; margin-bottom:16px; box-shadow:0 2px 8px #00000012; }
+  input { box-sizing:border-box; width:100%; padding:12px; margin:5px 0 12px; border:1px solid #ccc; border-radius:8px; font-size:16px; }
+  button { background:#245c42; color:white; border:0; border-radius:8px; padding:11px 16px; font-size:15px; cursor:pointer; }
+  button.delete { background:#a63b3b; padding:7px 12px; }
+  .site { display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid #ddd; padding:12px 0; }
+  .site-info { min-width:0; overflow-wrap:anywhere; }
+  .site-info a { color:#176348; }
+  .muted { color:#64736a; font-size:13px; }
+</style>
 </head>
 <body>
-  <header>
-    <h1>⛰️ YamaNavi AI 2.0</h1>
-    <p>最高の景色を、最高の思い出に。</p>
-  </header>
-  <main>
-    <section>
-      <h2>山を探す</h2>
-      <p>天気や希望条件から、おすすめの山を探す機能を作成していきます。</p>
-      <button onclick="alert('検索機能は今後追加します')">山を探す</button>
-    </section>
-    <section>
-      <h2>登山計画</h2>
-      <p>登山口・駐車場・コース情報を確認できるようにします。</p>
-    </section>
-    <section>
-      <h2>自分の登山履歴</h2>
-      <p>GPXファイルの取り込みに対応する予定です。</p>
-    </section>
-    <section>
-      <h2>設定・バックアップ</h2>
-      <p>出発地：日立市（初期設定予定）</p>
-    </section>
-  </main>
+<header>
+  <h1>⛰️ YamaNavi AI 2.0</h1>
+  <p>最高の景色を、最高の思い出に。</p>
+</header>
+<main>
+  <section>
+    <h2>山を探す</h2>
+    <p>天気や希望条件から、おすすめの山を探す機能を作成していきます。</p>
+    <button onclick="alert('検索機能は今後追加します')">山を探す</button>
+  </section>
+  <section>
+    <h2>登山計画</h2>
+    <p>登山口・駐車場・コース情報を確認できるようにします。</p>
+  </section>
+  <section>
+    <h2>自分の登山履歴</h2>
+    <p>GPXファイルの取り込みに対応する予定です。</p>
+  </section>
+  <section>
+    <h2>設定・バックアップ</h2>
+    <p>出発地：日立市（初期設定予定）</p>
+    <h3>参考サイトの管理</h3>
+    <p class="muted">サイト名・URLのどちらか一方だけでも登録できます。</p>
+    <div id="siteList"></div>
+    <label for="siteName">サイト名</label>
+    <input id="siteName" placeholder="例：山小屋情報">
+    <label for="siteUrl">URL</label>
+    <input id="siteUrl" placeholder="https://example.com" type="url">
+    <button id="addSite">＋ 参考サイトを追加</button>
+    <p id="message" class="muted" role="status"></p>
+    <p class="muted">登録情報は、このブラウザ内に保存されます。別の端末とは自動同期されません。</p>
+  </section>
+</main>
+<script>
+(function(){
+  "use strict";
+  const KEY = "yamanavi2_reference_sites";
+  const defaults = [
+    {name:"YAMAP",url:"https://yamap.com"},
+    {name:"ヤマレコ",url:"https://www.yamareco.com"},
+    {name:"気象庁",url:"https://www.jma.go.jp"}
+  ];
+  const list = document.getElementById("siteList");
+  const message = document.getElementById("message");
+  let sites;
+
+  try {
+    const saved = localStorage.getItem(KEY);
+    sites = saved === null ? defaults : JSON.parse(saved);
+    if (!Array.isArray(sites)) throw new Error("Invalid data");
+  } catch(e) {
+    sites = defaults;
+    message.textContent = "保存データを読み込めませんでした。初期リストを表示しています。";
+  }
+
+  function save(){
+    try {
+      localStorage.setItem(KEY, JSON.stringify(sites));
+      return true;
+    } catch(e) {
+      message.textContent = "保存できませんでした。ブラウザの保存設定を確認してください。";
+      return false;
+    }
+  }
+
+  function render(){
+    list.replaceChildren();
+    if(sites.length === 0) {
+      const p = document.createElement("p");
+      p.className = "muted";
+      p.textContent = "登録サイトはありません。";
+      list.appendChild(p);
+    }
+    sites.forEach((site,index)=>{
+      const row = document.createElement("div");
+      row.className = "site";
+      const info = document.createElement("div");
+      info.className = "site-info";
+      const strong = document.createElement("strong");
+      strong.textContent = site.name || site.url;
+      info.appendChild(strong);
+      if(site.url){
+        const p = document.createElement("div");
+        const a = document.createElement("a");
+        a.href = site.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = site.url;
+        p.appendChild(a);
+        info.appendChild(p);
+      }
+      const del = document.createElement("button");
+      del.className = "delete";
+      del.textContent = "削除";
+      del.addEventListener("click",()=>{
+        if(!confirm("このサイトを削除しますか？")) return;
+        const previous = sites;
+        sites = sites.filter((_,i)=>i!==index);
+        if(!save()) sites = previous;
+        render();
+      });
+      row.append(info,del);
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById("addSite").addEventListener("click",()=>{
+    const name = document.getElementById("siteName").value.trim();
+    const rawUrl = document.getElementById("siteUrl").value.trim();
+    if(!name && !rawUrl){
+      message.textContent = "サイト名またはURLを入力してください。";
+      return;
+    }
+    let url = rawUrl;
+    if(url){
+      try {
+        const parsed = new URL(url);
+        if(!["https:","http:"].includes(parsed.protocol)) throw new Error();
+        url = parsed.href;
+      } catch(e) {
+        message.textContent = "URLは https:// から始まる正しい形式で入力してください。";
+        return;
+      }
+    }
+    const previous = sites;
+    sites = [...sites,{name:name || url,url}];
+    if(!save()){
+      sites = previous;
+      return;
+    }
+    document.getElementById("siteName").value = "";
+    document.getElementById("siteUrl").value = "";
+    message.textContent = "参考サイトを保存しました。";
+    render();
+  });
+  render();
+})();
+</script>
 </body>
 </html>
