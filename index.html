@@ -11,7 +11,7 @@ h1{margin:0 0 10px}main{max-width:720px;margin:24px auto;padding:0 16px}
 section{background:#fff;padding:22px;border-radius:14px;margin-bottom:16px;box-shadow:0 2px 8px #00000012}
 input[type=text],input[type=url],input[type=date],input[type=number],select{box-sizing:border-box;width:100%;padding:12px;margin:5px 0 12px;border:1px solid #ccc;border-radius:8px;font-size:16px}
 button{background:#245c42;color:#fff;border:0;border-radius:8px;padding:11px 16px;font-size:15px;cursor:pointer;margin:4px 4px 4px 0}
-button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:12px 0}.site-info{min-width:0;overflow-wrap:anywhere}.site-info a{color:#176348}.muted{color:#64736a;font-size:13px}.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.field label{display:block;font-weight:bold}.field input,.field select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:16px;margin:6px 0}.ok{color:#176348}.mountain-card{border:1px solid #dbe5de;border-radius:10px;padding:14px;margin:10px 0;background:#f9fcfa}.mountain-card h3{margin:0 0 6px}.tag{display:inline-block;background:#e6f2e9;padding:3px 8px;border-radius:10px;margin:3px 5px 3px 0;font-size:12px}.warning{background:#fff6e5;border-left:4px solid #bd8425;padding:12px;border-radius:6px}.route-details{margin-top:12px;border-top:1px solid #dbe5de;padding-top:10px}.route-details summary{cursor:pointer;color:#176348;font-weight:bold;padding:8px 0}.route-item{background:#fff;border:1px solid #dbe5de;border-radius:8px;padding:12px;margin:8px 0}.route-item h4{margin:0 0 8px}.route-item dl{display:grid;grid-template-columns:100px 1fr;gap:6px;margin:0}.route-item dt{font-weight:bold}.route-item dd{margin:0}.route-note{font-size:13px;color:#765522}
+button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:12px 0}.site-info{min-width:0;overflow-wrap:anywhere}.site-info a{color:#176348}.muted{color:#64736a;font-size:13px}.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.field label{display:block;font-weight:bold}.field input,.field select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:16px;margin:6px 0}.ok{color:#176348}.mountain-card{border:1px solid #dbe5de;border-radius:10px;padding:14px;margin:10px 0;background:#f9fcfa}.mountain-card h3{margin:0 0 6px}.tag{display:inline-block;background:#e6f2e9;padding:3px 8px;border-radius:10px;margin:3px 5px 3px 0;font-size:12px}.warning{background:#fff6e5;border-left:4px solid #bd8425;padding:12px;border-radius:6px}.route-details{margin-top:12px;border-top:1px solid #dbe5de;padding-top:10px}.route-details summary{cursor:pointer;color:#176348;font-weight:bold;padding:8px 0}.route-item{background:#fff;border:1px solid #dbe5de;border-radius:8px;padding:12px;margin:8px 0}.route-item h4{margin:0 0 8px}.route-item dl{display:grid;grid-template-columns:100px 1fr;gap:6px;margin:0}.route-item dt{font-weight:bold}.route-item dd{margin:0}.route-note{font-size:13px;color:#765522}.import-summary{margin:10px 0}.import-list{max-height:450px;overflow:auto}.import-list table{width:100%;border-collapse:collapse}.import-list th,.import-list td{padding:9px 6px;border-bottom:1px solid #e1e9e3;text-align:left}.import-list th{position:sticky;top:0;background:white}.import-list td:nth-child(2){white-space:nowrap}
 </style>
 </head>
 <body>
@@ -32,6 +32,15 @@ button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items
 <p class="muted">検索条件を変更した場合は「検索条件を保存」も押してください。</p>
 <div id="mountainResults" aria-live="polite"></div>
 <p class="warning">【重要】候補はアプリ内に登録した山のサンプルです。全国の山を網羅していません。歩行時間・難易度・登山道状況・駐車場・山小屋営業・天気・交通アクセスを自動検証する機能はまだありません。赤岳・美濃戸発の歩行時間・距離・累積標高は参考値で、原典・測定条件の再照合は未完了です。他ルートの数値は未確認です。山行の判断には必ず公式情報・最新の登山情報を確認してください。</p></section>
+<section><h2>山頂データの読み込み（試験版）</h2>
+<p>Overpass Turboなどから保存したGeoJSONを読み込み、山頂名・標高・位置情報を一覧表示します。既存の「山を探す」の16座とは別の一覧です。</p>
+<label for="peakFile"><strong>GeoJSONファイルを選択</strong></label>
+<input id="peakFile" type="file" accept=".geojson,.json,application/geo+json,application/json">
+<button id="loadPeaks" type="button">山頂データを読み込む</button>
+<p id="peakMessage" class="muted" role="status" aria-live="polite"></p>
+<div id="peakResults" class="import-list"></div>
+<p class="muted">※ ファイルはこの画面内で読み取ります。サーバーへの送信やブラウザへの永続保存は行いません。ページを更新した場合は再度読み込んでください。登山ルート・コースタイム・安全性の判定には利用しません。出典：OpenStreetMap contributors（ODbL）。</p>
+</section>
 <section><h2>登山計画</h2><p>登山口・駐車場・コース情報を確認できるようにします。</p></section>
 <section><h2>自分の登山履歴</h2><p>GPXファイルの取り込みに対応する予定です。</p></section>
 <section>
@@ -138,6 +147,46 @@ document.getElementById('saveConditions').addEventListener('click',()=>{const c=
    results.appendChild(card);
   });
  });
+ // GeoJSON山頂の試験インポート（既存の検索条件やバックアップには影響させない）
+ const peakFile=document.getElementById('peakFile');
+ const peakMessage=document.getElementById('peakMessage');
+ const peakResults=document.getElementById('peakResults');
+ document.getElementById('loadPeaks').addEventListener('click',async()=>{
+  peakResults.replaceChildren();
+  const file=peakFile.files&&peakFile.files[0];
+  if(!file){peakMessage.textContent='GeoJSONファイルを選択してください。';return}
+  if(file.size>5*1024*1024){peakMessage.textContent='ファイルが大きすぎます（上限5MB）。';return}
+  let data;
+  try{data=JSON.parse(await file.text())}catch(e){peakMessage.textContent='ファイルを読み込めませんでした。JSON形式を確認してください。';return}
+  if(!data||data.type!=='FeatureCollection'||!Array.isArray(data.features)||data.features.length>10000){peakMessage.textContent='対応するGeoJSON（FeatureCollection）ではありません。';return}
+  const peaks=[];
+  data.features.forEach(f=>{
+   if(!f||f.type!=='Feature'||!f.geometry||f.geometry.type!=='Point'||!Array.isArray(f.geometry.coordinates))return;
+   const [lon,lat]=f.geometry.coordinates;
+   if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat < -90||lat>90||lon < -180||lon>180)return;
+   const props=f.properties||{};
+   if(props.natural!=='peak')return;
+   const name=typeof props.name==='string'&&props.name.trim()?props.name.trim():'（名称未登録）';
+   const eleRaw=props.ele;
+   const ele=eleRaw!==undefined&&eleRaw!==null&&String(eleRaw).trim()!==''&&Number.isFinite(Number(eleRaw))?Number(eleRaw):null;
+   peaks.push({name:name.slice(0,150),ele,lat,lon});
+  });
+  peakMessage.textContent='GeoJSON '+data.features.length+'件中、山頂 '+peaks.length+'件を読み込みました。標高あり '+peaks.filter(p=>p.ele!==null).length+'件。';
+  if(!peaks.length)return;
+  const table=document.createElement('table');
+  const thead=document.createElement('thead');const hr=document.createElement('tr');
+  ['山頂名','標高','位置情報'].forEach(v=>{const th=document.createElement('th');th.textContent=v;hr.appendChild(th)});thead.appendChild(hr);table.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  peaks.forEach(p=>{
+   const tr=document.createElement('tr');
+   const name=document.createElement('td');name.textContent=p.name;
+   const height=document.createElement('td');height.textContent=p.ele===null?'未登録':p.ele.toLocaleString('ja-JP')+'m';
+   const coords=document.createElement('td');
+   const link=document.createElement('a');link.href='https://www.openstreetmap.org/?mlat='+p.lat+'&mlon='+p.lon+'#map=14/'+p.lat+'/'+p.lon;link.target='_blank';link.rel='noopener noreferrer';link.textContent='地図を見る';coords.appendChild(link);
+   tr.append(name,height,coords);tbody.appendChild(tr);
+  });table.appendChild(tbody);peakResults.appendChild(table);
+ });
+
 const defaults=[{name:'YAMAP',url:'https://yamap.com'},{name:'ヤマレコ',url:'https://www.yamareco.com'},{name:'気象庁',url:'https://www.jma.go.jp'}];
 const list=document.getElementById('siteList');
 const message=document.getElementById('message');
