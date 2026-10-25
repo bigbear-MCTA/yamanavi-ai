@@ -39,7 +39,8 @@ button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items
 <button id="loadPeaks" type="button">山頂データを読み込む</button>
 <p id="peakMessage" class="muted" role="status" aria-live="polite"></p>
 <div id="peakResults" class="import-list"></div>
-<p class="muted">※ ファイルはこの画面内で読み取ります。サーバーへの送信やブラウザへの永続保存は行いません。ページを更新した場合は再度読み込んでください。登山ルート・コースタイム・安全性の判定には利用しません。出典：OpenStreetMap contributors（ODbL）。</p>
+<button id="clearPeaks" type="button" class="delete">保存した山頂データを削除</button>
+<p class="muted">※ ファイルはサーバーへ送信せず、このブラウザに保存します。同じブラウザで再度開くと復元されます。登山ルート・コースタイム・安全性の判定には利用しません。出典：OpenStreetMap contributors（ODbL）。</p>
 </section>
 <section><h2>登山計画</h2><p>登山口・駐車場・コース情報を確認できるようにします。</p></section>
 <section><h2>自分の登山履歴</h2><p>GPXファイルの取り込みに対応する予定です。</p></section>
@@ -52,7 +53,7 @@ button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items
 <label for="siteName">サイト名</label><input id="siteName" type="text" placeholder="例：山小屋情報">
 <label for="siteUrl">URL</label><input id="siteUrl" type="url" placeholder="https://example.com">
 <button id="addSite">＋ 参考サイトを追加</button>
-<h3>データのバックアップ・復元</h3><p class="muted">新しいバックアップには参考サイトと検索条件を含みます。以前の参考サイト専用JSONも読み込めます。</p>
+<h3>データのバックアップ・復元</h3><p class="muted">新しいバックアップには参考サイト・検索条件・保存した山頂データを含みます。以前のバックアップも読み込めます。</p>
 <button id="backup">JSONをバックアップ</button>
 <p><label for="restoreFile">復元するJSONファイルを選択</label></p>
 <input id="restoreFile" type="file" accept=".json,application/json">
@@ -151,6 +152,36 @@ document.getElementById('saveConditions').addEventListener('click',()=>{const c=
  const peakFile=document.getElementById('peakFile');
  const peakMessage=document.getElementById('peakMessage');
  const peakResults=document.getElementById('peakResults');
+ const PEAKS_KEY='yamanavi2_imported_peaks';
+ let savedPeaks=[];
+ function validPeaks(arr){return Array.isArray(arr)&&arr.length<=10000&&arr.every(p=>p&&typeof p.name==='string'&&p.name.length<=150&&(p.ele===null||(typeof p.ele==='number'&&Number.isFinite(p.ele)))&&typeof p.lat==='number'&&Number.isFinite(p.lat)&&p.lat>=-90&&p.lat<=90&&typeof p.lon==='number'&&Number.isFinite(p.lon)&&p.lon>=-180&&p.lon<=180)}
+ function renderPeaks(peaks){
+  peakResults.replaceChildren();
+  if(!peaks.length){peakMessage.textContent='保存済みの山頂データはありません。';return}
+  const table=document.createElement('table');
+  const thead=document.createElement('thead');const hr=document.createElement('tr');
+  ['山頂名','標高','位置情報'].forEach(v=>{const th=document.createElement('th');th.textContent=v;hr.appendChild(th)});thead.appendChild(hr);table.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  peaks.forEach(p=>{
+   const tr=document.createElement('tr');
+   const name=document.createElement('td');name.textContent=p.name;
+   const height=document.createElement('td');height.textContent=p.ele===null?'未登録':p.ele.toLocaleString('ja-JP')+'m';
+   const coords=document.createElement('td');
+   const link=document.createElement('a');link.href='https://www.openstreetmap.org/?mlat='+p.lat+'&mlon='+p.lon+'#map=14/'+p.lat+'/'+p.lon;link.target='_blank';link.rel='noopener noreferrer';link.textContent='地図を見る';coords.appendChild(link);
+   tr.append(name,height,coords);tbody.appendChild(tr);
+  });table.appendChild(tbody);peakResults.appendChild(table);
+ }
+ try{
+  const raw=localStorage.getItem(PEAKS_KEY);
+  if(raw!==null){const loaded=JSON.parse(raw);if(!validPeaks(loaded))throw new Error('invalid');savedPeaks=loaded;}
+  renderPeaks(savedPeaks);
+  if(savedPeaks.length)peakMessage.textContent='保存済みの山頂 '+savedPeaks.length+'件を復元しました。標高あり '+savedPeaks.filter(p=>p.ele!==null).length+'件。';
+ }catch(e){peakMessage.textContent='保存済みの山頂データを読み込めませんでした。GeoJSONから再読み込みしてください。';}
+ document.getElementById('clearPeaks').addEventListener('click',()=>{
+  if(!savedPeaks.length){peakMessage.textContent='削除する山頂データはありません。';return}
+  if(!confirm('保存した山頂データ '+savedPeaks.length+'件を削除しますか？'))return;
+  try{localStorage.removeItem(PEAKS_KEY);savedPeaks=[];renderPeaks(savedPeaks);peakMessage.textContent='保存した山頂データを削除しました。'}catch(e){peakMessage.textContent='削除に失敗しました。'}
+ });
  document.getElementById('loadPeaks').addEventListener('click',async()=>{
   peakResults.replaceChildren();
   const file=peakFile.files&&peakFile.files[0];
@@ -171,20 +202,12 @@ document.getElementById('saveConditions').addEventListener('click',()=>{const c=
    const ele=eleRaw!==undefined&&eleRaw!==null&&String(eleRaw).trim()!==''&&Number.isFinite(Number(eleRaw))?Number(eleRaw):null;
    peaks.push({name:name.slice(0,150),ele,lat,lon});
   });
-  peakMessage.textContent='GeoJSON '+data.features.length+'件中、山頂 '+peaks.length+'件を読み込みました。標高あり '+peaks.filter(p=>p.ele!==null).length+'件。';
-  if(!peaks.length)return;
-  const table=document.createElement('table');
-  const thead=document.createElement('thead');const hr=document.createElement('tr');
-  ['山頂名','標高','位置情報'].forEach(v=>{const th=document.createElement('th');th.textContent=v;hr.appendChild(th)});thead.appendChild(hr);table.appendChild(thead);
-  const tbody=document.createElement('tbody');
-  peaks.forEach(p=>{
-   const tr=document.createElement('tr');
-   const name=document.createElement('td');name.textContent=p.name;
-   const height=document.createElement('td');height.textContent=p.ele===null?'未登録':p.ele.toLocaleString('ja-JP')+'m';
-   const coords=document.createElement('td');
-   const link=document.createElement('a');link.href='https://www.openstreetmap.org/?mlat='+p.lat+'&mlon='+p.lon+'#map=14/'+p.lat+'/'+p.lon;link.target='_blank';link.rel='noopener noreferrer';link.textContent='地図を見る';coords.appendChild(link);
-   tr.append(name,height,coords);tbody.appendChild(tr);
-  });table.appendChild(tbody);peakResults.appendChild(table);
+  if(!validPeaks(peaks)){peakMessage.textContent='読み込んだ山頂データに不正な値があります。';return}
+  if(!peaks.length){peakMessage.textContent='山頂データが見つかりませんでした。保存内容は変更していません。';return}
+  try{localStorage.setItem(PEAKS_KEY,JSON.stringify(peaks))}catch(e){peakMessage.textContent='ブラウザへの保存に失敗しました。以前の保存データは変更していません。';return}
+  savedPeaks=peaks;
+  renderPeaks(savedPeaks);
+  peakMessage.textContent='GeoJSON '+data.features.length+'件中、山頂 '+peaks.length+'件を読み込み、ブラウザに保存しました。標高あり '+peaks.filter(p=>p.ele!==null).length+'件。';
  });
 
 const defaults=[{name:'YAMAP',url:'https://yamap.com'},{name:'ヤマレコ',url:'https://www.yamareco.com'},{name:'気象庁',url:'https://www.jma.go.jp'}];
@@ -230,7 +253,7 @@ document.getElementById('addSite').addEventListener('click',()=>{
  document.getElementById('siteName').value='';document.getElementById('siteUrl').value='';message.textContent='参考サイトを保存しました。';render();
 });
 document.getElementById('backup').addEventListener('click',()=>{
- const data={app:'YamaNavi AI 2.0',type:'reference-sites',version:2,exportedAt:new Date().toISOString(),sites,conditions:(()=>{try{const c=JSON.parse(localStorage.getItem(CONDITIONS_KEY));return validConditions(c)?c:readConditions()}catch(e){return readConditions()}})()};
+ const data={app:'YamaNavi AI 2.0',type:'reference-sites',version:3,exportedAt:new Date().toISOString(),sites,peaks:savedPeaks,conditions:(()=>{try{const c=JSON.parse(localStorage.getItem(CONDITIONS_KEY));return validConditions(c)?c:readConditions()}catch(e){return readConditions()}})()};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='yamanavi_reference_sites_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  message.textContent='バックアップファイルのダウンロードを開始しました。';
@@ -241,10 +264,10 @@ document.getElementById('restore').addEventListener('click',async()=>{
  if(file.size>1024*1024){message.textContent='ファイルが大きすぎます（上限1MB）。';return}
  let data;
  try{data=JSON.parse(await file.text())}catch(e){message.textContent='JSONファイルを読み込めませんでした。';return}
- if(!data||data.app!=='YamaNavi AI 2.0'||data.type!=='reference-sites'||![1,2].includes(data.version)||!validSites(data.sites)||(data.version===2&&!validConditions(data.conditions))){
+ if(!data||data.app!=='YamaNavi AI 2.0'||data.type!=='reference-sites'||![1,2,3].includes(data.version)||!validSites(data.sites)||(data.version>=2&&!validConditions(data.conditions))||(data.version===3&&!validPeaks(data.peaks))){
   message.textContent='このアプリの参考サイト用バックアップではありません。';return;
  }
- if(!confirm('現在の参考サイト一覧をバックアップファイルの内容で置き換えます。続けますか？'))return;
+ if(!confirm('バックアップに含まれる参考サイト・検索条件・山頂データ（旧版では含まれる項目のみ）を復元します。続けますか？'))return;
  if(data.version===2){try{localStorage.setItem(CONDITIONS_KEY,JSON.stringify(data.conditions))}catch(e){message.textContent='検索条件を保存できませんでした。復元を中止しました。';return}}
  if(save(data.sites)){if(data.version===2)showConditions(data.conditions);render();fileInput.value='';message.textContent='復元しました。画面を更新しても残るか確認してください。'}
 });
