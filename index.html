@@ -33,7 +33,7 @@ button.delete{background:#a63b3b;padding:7px 12px}.site{display:flex;align-items
 <div id="mountainResults" aria-live="polite"></div>
 <p class="warning">【重要】候補はサンプルと読み込んだ山頂データです。全国の山を網羅していません。読み込んだ山頂は山行日数で絞り込めず、登山可否を判定していません。歩行時間・難易度・登山道状況・駐車場・山小屋営業・天気・交通アクセスを自動検証する機能はまだありません。赤岳・美濃戸発の歩行時間・距離・累積標高は参考値で、原典・測定条件の再照合は未完了です。他ルートの数値は未確認です。山行の判断には必ず公式情報・最新の登山情報を確認してください。</p></section>
 <section><h2>山頂データの読み込み（試験版）</h2>
-<p>Overpass Turboなどから保存したGeoJSONを読み込み、山頂名・標高・位置情報を一覧表示します。読み込んだ山頂は「山を探す」の候補にも追加されます。登山日数・歩行時間による判定はできません。</p>
+<p>Overpass Turboなどから保存したGeoJSONを読み込み、山頂名・標高・位置情報を一覧表示します。読み込んだ山頂は「山を探す」の候補にも追加されます。山域・山名・標高が近い既存サンプルは統合候補として表示します（同一地点の確定ではありません）。登山日数・歩行時間による判定はできません。</p>
 <label for="peakArea"><strong>読み込む山域</strong></label>
 <select id="peakArea"><option value="yatsu">八ヶ岳</option><option value="north">北アルプス</option><option value="south">南アルプス</option><option value="central">中央アルプス</option><option value="tohoku">東北</option><option value="kanto">関東・上信越</option><option value="hokkaido">北海道</option><option value="west">近畿・中国・四国・九州</option></select>
 <p class="muted">選択した山域は、読み込むGeoJSONの山頂すべてに適用されます。地域が混在するファイルには使わないでください。</p>
@@ -134,31 +134,35 @@ document.getElementById('saveConditions').addEventListener('click',()=>{const c=
  const areaNames={north:'北アルプス',south:'南アルプス',central:'中央アルプス',yatsu:'八ヶ岳',tohoku:'東北',kanto:'関東・上信越',hokkaido:'北海道',west:'近畿・中国・四国・九州'};
  const results=document.getElementById('mountainResults');
   function mapLink(p){return 'https://www.openstreetmap.org/?mlat='+p.lat+'&mlon='+p.lon+'#map=14/'+p.lat+'/'+p.lon}
+  // 山域・山名・標高の一致を統合候補とする（座標のないサンプルとの同一地点は未確定）。
+  function normName(n){return n.normalize('NFKC').replace(/[\s　]+/g,'')}
+  function sampleMatch(p,list){return p.ele===null||p.name==='（名称未登録）'?null:list.find(m=>m.area===p.area&&normName(m.name)===normName(p.name)&&Math.abs(m.height-p.ele)<=30)}
   function searchMountains(){
-   const c=readConditions();
-   if(!validConditions(c)){conditionsMessage.textContent='検索条件の入力内容を確認してください。';return}
+   const c=readConditions();if(!validConditions(c)){conditionsMessage.textContent='検索条件の入力内容を確認してください。';return}
    results.replaceChildren();
    const matching=mountains.filter(m=>(c.area==='all'||m.area===c.area)&&m.days.includes(c.duration));
-   // GeoJSONの山頂には山行日数・ルートの情報がないため日数では除外しない。
    const imported=savedPeaks.filter(p=>c.area==='all'||p.area===c.area);
-   const intro=document.createElement('p');intro.textContent='サンプル候補 '+matching.length+'件 ／ 読み込み山頂 '+imported.length+'件を表示しています。';results.appendChild(intro);
-   const note=document.createElement('p');note.className='warning';note.textContent='読み込み山頂は位置と標高だけの情報です。山行日数・歩行時間・出発地・登山日・交通手段による適合判定はしていません。サンプル候補も歩行時間等は未判定です。';results.appendChild(note);
-   if(!matching.length&&!imported.length){const empty=document.createElement('p');empty.textContent='この山域に該当する登録済みデータはありません。';results.appendChild(empty)}
+   const merged=new Map(),standalone=[];
+   imported.forEach(p=>{const m=sampleMatch(p,matching);if(m&&!merged.has(m.name))merged.set(m.name,p);else standalone.push(p)});
+   const intro=document.createElement('p');intro.textContent='サンプル候補 '+matching.length+'件 ／ 読み込み山頂 '+imported.length+'件（統合候補 '+merged.size+'件） ／ 表示 '+(matching.length+standalone.length)+'件';results.appendChild(intro);
+   const note=document.createElement('p');note.className='warning';note.textContent='統合候補は山域・山名・標高差30m以内で照合しています。サンプルに座標がないため同一地点とは未確定です。読み込み山頂は山行日数・歩行時間・出発地・登山日・交通手段による適合判定をしていません。';results.appendChild(note);
+   if(!matching.length&&!standalone.length){const empty=document.createElement('p');empty.textContent='この山域に該当する登録済みデータはありません。';results.appendChild(empty)}
+   function appendMap(card,p){const info=document.createElement('p'),link=document.createElement('a');link.href=mapLink(p);link.target='_blank';link.rel='noopener noreferrer';link.textContent='地図で山頂を確認';info.appendChild(link);card.appendChild(info)}
    matching.forEach(m=>{
     const card=document.createElement('article');card.className='mountain-card';
     const title=document.createElement('h3');title.textContent=m.name;card.appendChild(title);
     const meta=document.createElement('p');meta.className='muted';meta.textContent=areaNames[m.area]+' ／ 標高 約'+m.height.toLocaleString('ja-JP')+'m';card.appendChild(meta);
     const desc=document.createElement('p');desc.textContent=m.note;card.appendChild(desc);
     const label=document.createElement('span');label.className='tag';label.textContent='サンプル：コース時間・最新状況未確認';card.appendChild(label);
+    if(merged.has(m.name)){const tag=document.createElement('span');tag.className='tag';tag.textContent='GeoJSON位置情報を照合（同一地点未確定）';card.appendChild(tag);appendMap(card,merged.get(m.name))}
     renderRoutes(card,m);results.appendChild(card);
    });
-   imported.forEach(p=>{
+   standalone.forEach(p=>{
     const card=document.createElement('article');card.className='mountain-card';
     const title=document.createElement('h3');title.textContent=p.name;card.appendChild(title);
     const meta=document.createElement('p');meta.className='muted';meta.textContent=areaNames[p.area]+' ／ 標高 '+(p.ele===null?'未登録':p.ele.toLocaleString('ja-JP')+'m');card.appendChild(meta);
     const label=document.createElement('span');label.className='tag';label.textContent='GeoJSON山頂：登山ルート・日数・歩行時間未確認';card.appendChild(label);
-    const info=document.createElement('p');const a=document.createElement('a');a.href=mapLink(p);a.target='_blank';a.rel='noopener noreferrer';a.textContent='地図で山頂を確認';info.appendChild(a);card.appendChild(info);
-    results.appendChild(card);
+    appendMap(card,p);results.appendChild(card);
    });
   }
   document.getElementById('searchMountains').addEventListener('click',searchMountains);
